@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFP 분석 자동화 - KTDS AI MVP</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 50px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+        .upload-area:hover {
+            border-color: #007bff;
+        }
+        .upload-area.dragover {
+            border-color: #007bff;
+            background-color: #f8f9fa;
+        }
+        .result-card {
+            margin-top: 20px;
+            display: none;
+        }
+        .progress-container {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>KTDS AI MVP
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="/">홈</a>
+                <a class="nav-link active" href="/rfp-analyzer">RFP 분석</a>
+                <a class="nav-link" href="/strategy-support">전략 지원</a>
+                <a class="nav-link" href="/quality-manager">품질 관리</a>
+                <a class="nav-link" href="/knowledge-manager">지식 관리</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row">
+            <div class="col-md-8 mx-auto">
+                <h2 class="mb-4">
+                    <i class="fas fa-file-contract me-2"></i>RFP 분석 자동화
+                </h2>
+                <p class="lead">RFP 문서를 업로드하면 AI가 자동으로 분석하여 주요 요구사항, 기술 사양, 위험도 등을 추출합니다.</p>
+
+                <!-- Upload Area -->
+                <div class="card">
+                    <div class="card-body">
+                        <form id="rfpForm" enctype="multipart/form-data">
+                            <div class="upload-area" id="uploadArea">
+                                <i class="fas fa-cloud-upload-alt fa-3x text-muted mb-3"></i>
+                                <h5>RFP 문서를 업로드하세요</h5>
+                                <p class="text-muted">PDF, DOC, DOCX 파일을 지원합니다 (최대 10MB)</p>
+                                <input type="file" id="fileInput" name="file" accept=".pdf,.doc,.docx,.txt" style="display: none;">
+                                <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click();">
+                                    <i class="fas fa-folder-open me-2"></i>파일 선택
+                                </button>
+                            </div>
+                        </form>
+
+                        <!-- Progress Bar -->
+                        <div class="progress-container mt-3">
+                            <div class="progress">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center mt-2">문서를 분석 중입니다...</p>
+                        </div>
+
+                        <!-- Selected File Info -->
+                        <div id="fileInfo" style="display: none;" class="mt-3">
+                            <div class="alert alert-info">
+                                <i class="fas fa-file me-2"></i>
+                                <span id="fileName"></span>
+                                <button type="button" class="btn btn-sm btn-primary float-end" onclick="analyzeRFP()">
+                                    <i class="fas fa-search me-1"></i>분석 시작
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Analysis Results -->
+                <div class="result-card">
+                    <div class="card mt-4">
+                        <div class="card-header">
+                            <h5><i class="fas fa-chart-bar me-2"></i>분석 결과</h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="analysisResults">
+                                <!-- Results will be populated here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let selectedFile = null;
+
+        // File input change event
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            selectedFile = e.target.files[0];
+            if (selectedFile) {
+                document.getElementById('fileName').textContent = selectedFile.name;
+                document.getElementById('fileInfo').style.display = 'block';
+            }
+        });
+
+        // Drag and drop functionality
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                selectedFile = files[0];
+                document.getElementById('fileName').textContent = selectedFile.name;
+                document.getElementById('fileInfo').style.display = 'block';
+            }
+        });
+
+        function analyzeRFP() {
+            if (!selectedFile) {
+                alert('파일을 선택해주세요.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+
+            // Show progress
+            document.querySelector('.progress-container').style.display = 'block';
+            let progress = 0;
+            const progressBar = document.querySelector('.progress-bar');
+            
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 30;
+                if (progress > 90) progress = 90;
+                progressBar.style.width = progress + '%';
+            }, 500);
+
+            fetch('/api/rfp/analyze', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                clearInterval(progressInterval);
+                progressBar.style.width = '100%';
+                
+                setTimeout(() => {
+                    document.querySelector('.progress-container').style.display = 'none';
+                    displayResults(data);
+                }, 500);
+            })
+            .catch(error => {
+                clearInterval(progressInterval);
+                document.querySelector('.progress-container').style.display = 'none';
+                console.error('Error:', error);
+                alert('분석 중 오류가 발생했습니다.');
+            });
+        }
+
+        function displayResults(data) {
+            if (data.error) {
+                document.getElementById('analysisResults').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        오류: ${data.error}
+                    </div>
+                `;
+            } else {
+                const resultsHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-list me-2"></i>주요 요구사항</h6>
+                            <ul class="list-group mb-3">
+                                ${data.requirements.slice(0, 5).map(req => `<li class="list-group-item">${req}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-cogs me-2"></i>기술 사양</h6>
+                            <ul class="list-group mb-3">
+                                ${data.technical_specs.slice(0, 5).map(spec => `<li class="list-group-item">${spec}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-clock me-2"></i>프로젝트 일정</h6>
+                            <div class="alert alert-info">${data.timeline || '명시되지 않음'}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-dollar-sign me-2"></i>예산 정보</h6>
+                            <div class="alert alert-info">${data.budget_info || '명시되지 않음'}</div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6><i class="fas fa-star me-2"></i>신뢰도 점수</h6>
+                            <div class="alert alert-success">${data.confidence_score}%</div>
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h6><i class="fas fa-exclamation-triangle me-2"></i>위험도 평가</h6>
+                        <div class="row">
+                            ${Object.entries(data.risk_assessment).map(([key, value]) => `
+                                <div class="col-md-4 mb-2">
+                                    <div class="card">
+                                        <div class="card-body p-2">
+                                            <small class="text-muted">${key}</small>
+                                            <div class="fw-bold">${value}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h6><i class="fas fa-clipboard-check me-2"></i>컴플라이언스 요구사항</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            ${data.compliance_requirements.map(req => `<span class="badge bg-secondary">${req}</span>`).join('')}
+                        </div>
+                    </div>
+
+                    <div class="mt-3">
+                        <h6><i class="fas fa-chart-line me-2"></i>평가 기준</h6>
+                        <ul class="list-group">
+                            ${data.evaluation_criteria.slice(0, 3).map(criteria => `<li class="list-group-item">${criteria}</li>`).join('')}
+                        </ul>
+                    </div>
+                `;
+
+                document.getElementById('analysisResults').innerHTML = resultsHTML;
+            }
+
+            document.querySelector('.result-card').style.display = 'block';
+        }
+    </script>
+</body>
+</html>

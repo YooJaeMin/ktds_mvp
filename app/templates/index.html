@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KTDS MVP - AI 금융사업 전략 서비스</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        .service-card {
+            transition: transform 0.3s;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #667eea;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-brain me-2"></i>KTDS AI MVP
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/">홈</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/rfp-analyzer">RFP 분석</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/strategy-support">전략 지원</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/quality-manager">품질 관리</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/knowledge-manager">지식 관리</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section text-center">
+        <div class="container">
+            <h1 class="display-4 fw-bold mb-4">AI 기반 금융사업 전략 서비스</h1>
+            <p class="lead mb-5">Microsoft Azure AI 기술을 활용한 IT 기업의 대외 금융사업 수주 전략 지원 플랫폼</p>
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <p class="fs-5">RFP 분석부터 제안서 품질 관리까지, AI가 귀하의 사업 성공을 돕습니다</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">제공 서비스</h2>
+            <div class="row g-4">
+                <!-- RFP 분석 자동화 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card service-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-file-contract feature-icon mb-3"></i>
+                            <h5 class="card-title">RFP 분석 자동화</h5>
+                            <p class="card-text">RFP 문서를 자동으로 분석하여 주요 요구사항과 위험도를 평가합니다.</p>
+                            <a href="/rfp-analyzer" class="btn btn-primary">서비스 이용</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 사업 이해 & 전략 지원 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card service-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-lightbulb feature-icon mb-3"></i>
+                            <h5 class="card-title">사업 이해 & 전략 지원</h5>
+                            <p class="card-text">시장 분석과 경쟁사 정보를 바탕으로 최적의 사업 전략을 제안합니다.</p>
+                            <a href="/strategy-support" class="btn btn-primary">서비스 이용</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 제안서 품질 관리 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card service-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-chart-line feature-icon mb-3"></i>
+                            <h5 class="card-title">제안서 품질 관리</h5>
+                            <p class="card-text">제안서의 품질을 자동으로 평가하고 개선사항을 제안합니다.</p>
+                            <a href="/quality-manager" class="btn btn-primary">서비스 이용</a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 지식 관리 -->
+                <div class="col-md-6 col-lg-3">
+                    <div class="card service-card h-100 text-center p-4">
+                        <div class="card-body">
+                            <i class="fas fa-database feature-icon mb-3"></i>
+                            <h5 class="card-title">지식 관리</h5>
+                            <p class="card-text">과거 제안서와 사업 자료를 체계적으로 관리하고 검색합니다.</p>
+                            <a href="/knowledge-manager" class="btn btn-primary">서비스 이용</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">주요 특징</h2>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-robot feature-icon mb-3"></i>
+                        <h5>Azure AI 기반</h5>
+                        <p>Microsoft Azure의 최신 AI 기술을 활용하여 정확하고 신뢰할 수 있는 분석을 제공합니다.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-clock feature-icon mb-3"></i>
+                        <h5>시간 절약</h5>
+                        <p>수동으로 수행하던 분석 작업을 자동화하여 시간을 대폭 절약할 수 있습니다.</p>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="text-center">
+                        <i class="fas fa-shield-alt feature-icon mb-3"></i>
+                        <h5>보안 강화</h5>
+                        <p>기업의 민감한 정보를 안전하게 보호하는 보안 체계를 갖추고 있습니다.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>KTDS AI MVP</h5>
+                    <p>IT 기업의 금융사업 수주를 위한 AI 솔루션</p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p>&copy; 2024 KTDS AI MVP. All rights reserved.</p>
+                    <p>Powered by Microsoft Azure AI</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
