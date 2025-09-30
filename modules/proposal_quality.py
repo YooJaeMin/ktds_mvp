@@ -219,7 +219,7 @@ def generate_auto_rfp_summary_for_quality(content, industry):
                 "content": f"""
                 업종: {industry}
                 RFP 내용:
-                {content[:2000]}...
+                {content}
                 
                 다음 형식으로 RFP를 요약해주세요:
                 
@@ -322,12 +322,26 @@ def generate_quality_results_manual(rfp_info, proposal_content):
                 # 요구사항 매핑 결과 표시
                 mapping_result = future_mapping.result()
                 results['mapping_result'] = mapping_result
-                mapping_placeholder.markdown(mapping_result)
+                mapping_placeholder.markdown(
+                    f"""
+                    <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                        {mapping_result}
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
                 
                 # 누락 항목 결과 표시
                 missing_items = future_missing.result()
                 results['missing_items'] = missing_items
-                missing_placeholder.markdown(missing_items)
+                missing_placeholder.markdown(
+                    f"""
+                    <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                        {missing_items}
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
                 
                 return results
         
@@ -402,12 +416,26 @@ def generate_quality_results_with_urls(rfp_info, directory_name):
                 # 요구사항 매핑 결과 표시
                 mapping_result = future_mapping.result()
                 results['mapping_result'] = mapping_result
-                mapping_placeholder.markdown(mapping_result)
+                mapping_placeholder.markdown(
+                    f"""
+                    <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                        {mapping_result}
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
                 
                 # 누락 항목 결과 표시
                 missing_items = future_missing.result()
                 results['missing_items'] = missing_items
-                missing_placeholder.markdown(missing_items)
+                missing_placeholder.markdown(
+                    f"""
+                    <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                        {missing_items}
+                    </div>
+                    """, 
+                    unsafe_allow_html=True
+                )
                 
                 return results
         
@@ -517,28 +545,36 @@ def detect_missing_items_with_urls(azure_services, rfp_info, main_rfp_url, main_
             
             ### 1. 기능적 요구사항 누락
             - [누락된 기능]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 영향 범위: [전체/부분적/제한적]
+              - 누락 리스크: [N/10점]
+              - 보완 방안: [구체적 제안]
             
             ### 2. 비기능적 요구사항 누락
             - [누락된 요구사항]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 시스템 영향도: [N/10점]
+              - 누락 리스크: [N/10점]
+              - 보완 방안: [구체적 제안]
             
             ### 3. 기술적 요구사항 누락
             - [누락된 기술]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 기술적 리스크: [N/10점]
+              - 보완 난이도: [상/중/하]
+              - 보완 방안: [구체적 제안]
             
             ### 4. 비즈니스 요구사항 누락
             - [누락된 요구사항]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 비즈니스 영향: [N/10점]
+              - 긴급도: [즉시/단기/중장기]
+              - 보완 방안: [구체적 제안]
             
             ### 5. 우선순위별 개선 계획
-            - High 우선순위: [즉시 보완 필요]
-            - Medium 우선순위: [단계적 보완]
-            - Low 우선순위: [선택적 보완]
+            - **High 우선순위 (8-10점)**: 즉시 보완 필요, 프로젝트 성공에 필수
+            - **Medium 우선순위 (5-7점)**: 단계적 보완, 품질 향상에 중요
+            - **Low 우선순위 (1-4점)**: 선택적 보완, 추가 가치 제공
             """
         }
     ]
@@ -560,31 +596,49 @@ def generate_requirements_mapping_manual(azure_services, rfp_info, proposal_cont
             업종: {rfp_info.get('industry', '금융')}
             RFP 정보: {rfp_info.get('name', '')}
             RFP 요약: {rfp_info.get('rfp_summary', '')}
-            RFP 내용: {rfp_info.get('rfp_content', '')[:2000]}...
+            RFP 내용: {rfp_info.get('rfp_content', '')}
             
-            제안서 내용: {proposal_content[:2000]}...
+            제안서 내용: {proposal_content}
             
-            다음 형식으로 요구사항 매핑을 분석해주세요:
+            다음 형식으로 요구사항 매핑을 분석하고, **구체적인 수치와 평가**를 제공해주세요:
             
             ## 요구사항 매핑 분석
             
             ### 1. 완전히 충족된 요구사항
             - [요구사항]: [제안서에서의 응답]
-            - 매핑도: 100%
+              - 매핑도: 100% (충족도 점수: 10/10점)
+              - 제안 품질: [상/중/하]
+              - 차별화 포인트: [있음/보통/없음]
             
             ### 2. 부분적으로 충족된 요구사항
             - [요구사항]: [제안서에서의 응답]
-            - 매핑도: [%]
-            - 개선 필요사항: [구체적 개선 방안]
+              - 매핑도: [N%] (충족도 점수: [N/10점])
+              - 충족된 부분: [구체적 내용]
+              - 부족한 부분: [구체적 내용]
+              - 개선 필요도: [상/중/하]
+              - 개선 필요사항: [구체적 개선 방안]
             
             ### 3. 충족되지 않은 요구사항
             - [요구사항]: [누락된 내용]
-            - 매핑도: 0%
-            - 보완 방안: [구체적 보완 방안]
+              - 매핑도: 0% (충족도 점수: 0/10점)
+              - 중요도: [N/10점]
+              - 누락 리스크: [상/중/하]
+              - 보완 방안: [구체적 보완 방안]
+              - 예상 보완 시간: [N 일]
             
             ### 4. 전체 매핑 점수
-            - 전체 충족도: [%]
-            - 우선 개선 항목: [상위 3개]
+            - 전체 충족도: [N%] (평균 점수: [N/10점])
+            - 완전 충족: [N개 항목] ([N%])
+            - 부분 충족: [N개 항목] ([N%])
+            - 미충족: [N개 항목] ([N%])
+            - 우선 개선 항목: [상위 3개, 중요도 순]
+            
+            **매핑도 평가 기준:**
+            - 90-100%: 완전 충족, 우수한 제안
+            - 70-89%: 대부분 충족, 일부 보완 필요
+            - 50-69%: 부분 충족, 상당한 개선 필요
+            - 30-49%: 불충분, 대폭 보완 필요
+            - 0-29%: 거의 미충족, 전면 재작성 필요
             """
         }
     ]
@@ -605,9 +659,9 @@ def detect_missing_items_manual(azure_services, rfp_info, proposal_content):
             "content": f"""
             업종: {rfp_info.get('industry', '금융')}
             RFP 요약: {rfp_info.get('rfp_summary', '')}
-            RFP 내용: {rfp_info.get('rfp_content', '')[:2000]}...
+            RFP 내용: {rfp_info.get('rfp_content', '')}
             
-            제안서 내용: {proposal_content[:2000]}...
+            제안서 내용: {proposal_content}
             
             다음 관점에서 누락된 항목을 분석해주세요:
             
@@ -615,28 +669,36 @@ def detect_missing_items_manual(azure_services, rfp_info, proposal_content):
             
             ### 1. 기능적 요구사항 누락
             - [누락된 기능]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 영향 범위: [전체/부분적/제한적]
+              - 누락 리스크: [N/10점]
+              - 보완 방안: [구체적 제안]
             
             ### 2. 비기능적 요구사항 누락
             - [누락된 요구사항]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 시스템 영향도: [N/10점]
+              - 누락 리스크: [N/10점]
+              - 보완 방안: [구체적 제안]
             
             ### 3. 기술적 요구사항 누락
             - [누락된 기술]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 기술적 리스크: [N/10점]
+              - 보완 난이도: [상/중/하]
+              - 보완 방안: [구체적 제안]
             
             ### 4. 비즈니스 요구사항 누락
             - [누락된 요구사항]: [상세 설명]
-            - 중요도: [High/Medium/Low]
-            - 보완 방안: [구체적 제안]
+              - 중요도: [High/Medium/Low] (점수: [N/10점])
+              - 비즈니스 영향: [N/10점]
+              - 긴급도: [즉시/단기/중장기]
+              - 보완 방안: [구체적 제안]
             
             ### 5. 우선순위별 개선 계획
-            - High 우선순위: [즉시 보완 필요]
-            - Medium 우선순위: [단계적 보완]
-            - Low 우선순위: [선택적 보완]
+            - **High 우선순위 (8-10점)**: 즉시 보완 필요, 프로젝트 성공에 필수
+            - **Medium 우선순위 (5-7점)**: 단계적 보완, 품질 향상에 중요
+            - **Low 우선순위 (1-4점)**: 선택적 보완, 추가 가치 제공
             """
         }
     ]

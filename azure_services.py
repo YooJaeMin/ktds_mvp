@@ -334,7 +334,7 @@ OPENAI_API_TYPE=azure
             print(f"문서 검색 오류: {e}")
             return []
     
-    def call_openai(self, messages, model="gpt-4.1", temperature=0.7):
+    def call_openai(self, messages, model="gpt-4.1", temperature=0.3):
         """OpenAI API 호출"""
         try:
             # OpenAI 설정 확인
@@ -355,7 +355,7 @@ OPENAI_API_TYPE=azure
                 model=model,  # Azure에서는 배포 이름 사용
                 messages=messages,
                 temperature=temperature,
-                max_tokens=2000
+                max_tokens=8000
             )
             
             return response.choices[0].message.content
@@ -391,7 +391,7 @@ OPENAI_API_TYPE=azure
 - OPENAI_API_TYPE
 """
     
-    def call_openai_with_files(self, messages, file_paths, model="gpt-4.1", temperature=0.7):
+    def call_openai_with_files(self, messages, file_paths, model="gpt-4.1", temperature=0.3):
         """파일 첨부와 함께 OpenAI API 호출"""
         try:
             # OpenAI 설정 확인
@@ -430,7 +430,7 @@ OPENAI_API_TYPE=azure
                 model=model,
                 messages=enhanced_messages,
                 temperature=temperature,
-                max_tokens=4000
+                max_tokens=8000
             )
             
             return response.choices[0].message.content

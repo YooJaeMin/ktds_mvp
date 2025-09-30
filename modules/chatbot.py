@@ -84,19 +84,43 @@ def analyze_query_intent(query, azure_services):
 
 def _format_search_results_for_prompt(query, enhanced_query, kb_results, web_results):
     """검색 결과를 프롬프트용으로 포맷팅"""
-    # 지식 베이스 결과 포맷팅
+    # 지식 베이스 결과 포맷팅 (상세하게)
     kb_formatted = ""
     if kb_results:
-        kb_formatted = "지식 베이스 검색 결과:\n"
+        kb_formatted = "=== 📚 지식 베이스 검색 결과 (우선 참조) ===\n"
         for i, result in enumerate(kb_results, 1):
             kb_formatted += f"\n【문서 {i}】\n"
             kb_formatted += f"📄 파일명: {result.get('title', '제목 없음')}\n"
             kb_formatted += f"🏢 고객사: {result.get('client_name', '정보 없음')}\n"
             kb_formatted += f"📁 위치: {result.get('container_name', '정보 없음')}\n"
             kb_formatted += f"⭐ 관련도: {result.get('score', 0):.2f}\n"
-            kb_formatted += f"📝 내용: {result.get('content', '')[:500]}...\n"
+            kb_formatted += f"📝 상세 내용: {result.get('content', '')[:1000]}\n"  # 더 많은 내용
+            if len(result.get('content', '')) > 1000:
+                kb_formatted += "...\n"
     else:
-        kb_formatted = "지식 베이스에서 관련 정보를 찾을 수 없습니다."
+        kb_formatted = "=== 📚 지식 베이스 검색 결과 ===\n지식 베이스에서 관련 정보를 찾을 수 없습니다."
+    
+    # 웹 검색 결과 포맷팅
+    web_formatted = ""
+    if web_results:
+        web_formatted = "=== 🌐 웹 검색 결과 (참고용) ===\n"
+        # web_results가 리스트인지 문자열인지 확인
+        if isinstance(web_results, list):
+            for i, result in enumerate(web_results, 1):
+                web_formatted += f"\n【웹 결과 {i}】\n"
+                if isinstance(result, dict):
+                    web_formatted += f"제목: {result.get('title', '제목 없음')}\n"
+                    web_formatted += f"요약: {result.get('snippet', result.get('content', '내용 없음'))}\n"
+                    web_formatted += f"URL: {result.get('url', 'URL 없음')}\n"
+                else:
+                    web_formatted += f"{str(result)}\n"
+        else:
+            try:
+                web_formatted += f"{web_results}\n"
+            except Exception:
+                web_formatted += "웹 검색 결과를 처리할 수 없습니다.\n"
+    else:
+        web_formatted = "=== 🌐 웹 검색 결과 ===\n웹에서 관련 정보를 찾을 수 없습니다."
     
     return f"""
     원본 질문: {query}
@@ -104,10 +128,9 @@ def _format_search_results_for_prompt(query, enhanced_query, kb_results, web_res
     
     {kb_formatted}
     
-    웹 검색 결과:
-    {web_results if web_results else "웹에서 관련 정보를 찾을 수 없습니다."}
+    {web_formatted}
     
-    위 정보를 바탕으로 원본 질문에 대한 답변을 제공해주세요.
+    위 정보를 바탕으로 답변을 구성해주세요. 지식 베이스 결과를 우선적으로 활용하고, 웹 검색 결과는 보조적으로 참고해주세요.
     """
 
 def generate_chatbot_response(query, azure_services, use_enhanced_query=True):
@@ -134,20 +157,44 @@ def generate_chatbot_response(query, azure_services, use_enhanced_query=True):
         # 웹 검색 (개선된 쿼리 사용)
         web_results = search_web(enhanced_query, azure_services)
         
-        # 검색 결과 디버깅 정보
-        st.info(f"🔍 검색 결과: 지식베이스 {len(kb_results)}개, 웹검색 {len(web_results)}개")
+        # 검색 결과 디버깅 정보 (더 상세하게)
+        if kb_results:
+            st.success(f"📚 지식 베이스에서 {len(kb_results)}개의 관련 문서를 찾았습니다.")
+            
+        else:
+            st.warning("📚 지식 베이스에서 관련 문서를 찾을 수 없습니다.")
+        
+        if web_results:
+            # web_results가 리스트인지 문자열인지 확인
+            if isinstance(web_results, list):
+                st.info(f"🌐 웹에서 {len(web_results)}개의 관련 정보를 찾았습니다.")
+            else:
+                try:
+                    st.info(f"🌐 웹에서 {len(web_results.split('\\n'))}개의 관련 정보를 찾았습니다.")
+                except AttributeError:
+                    st.info(f"🌐 웹에서 관련 정보를 찾았습니다.")
+        else:
+            st.warning("🌐 웹에서 관련 정보를 찾을 수 없습니다.")
         
         # 검색 결과를 종합하여 응답 생성
         system_prompt = """당신은 RFP 분석 및 제안서 작성에 도움을 주는 전문 AI 어시스턴트입니다.
-        지식 베이스와 웹 검색 결과를 바탕으로 정확하고 유용한 정보를 제공해주세요.
-        답변은 한국어로 작성하고, 구체적이고 실용적인 조언을 제공해주세요.
+
+        답변 구조:
+        1. 📚 지식 베이스 기반 답변 (우선순위)
+           - 지식 베이스 검색 결과가 있으면 이를 기반으로 상세한 답변 제공
+           - 문서명, 고객사명, 업종 정보를 활용한 맥락 제공
+           - 검색 점수가 높은 결과를 우선적으로 활용
+           - 관련 문서의 구체적인 내용을 인용하여 답변
         
-        지식 베이스 검색 결과가 있는 경우:
-        - 문서명, 고객사명, 업종 정보를 활용하여 맥락을 제공하세요
-        - 검색 점수가 높은 결과를 우선적으로 활용하세요
-        - 관련 문서의 구체적인 내용을 인용하여 답변하세요
+        2. 🌐 웹 검색 보조 정보 (참고용)
+           - 지식 베이스 결과가 부족한 경우에만 웹 검색 결과 활용
+           - 최신 정보나 일반적인 지식이 필요한 경우에만 참조
         
-        검색 결과가 없는 경우 일반적인 지식을 바탕으로 답변해주세요."""
+        3. 답변 형식:
+           - 한국어로 작성
+           - 구체적이고 실용적인 조언 제공
+           - 정보 출처를 명확히 구분하여 표시
+           - 지식 베이스 정보는 "📚 내부 문서"로, 웹 정보는 "🌐 웹 참조"로 표시"""
         
         if query_analysis:
             system_prompt += f"\n\n질문 분석 결과:\n- 의도: {query_analysis.get('intent')}\n- 핵심 키워드: {', '.join(query_analysis.get('keywords', []))}"
@@ -277,7 +324,59 @@ def show_chatbot_panel():
                     st.markdown(f"**시간:** {message['timestamp']}")
             else:
                 with st.expander(f"💡 답변 {i+1}: {message['content'][:50]}...", expanded=True):
-                    st.markdown(f"**답변:** {message['content']}")
+                    # 답변 내용을 지식기반과 웹기반으로 구분하여 표시
+                    response_content = message['content']
+                    
+                    # 지식기반 답변 부분 추출 (📚 표시가 있는 부분)
+                    kb_sections = []
+                    web_sections = []
+                    current_section = []
+                    current_type = None
+                    
+                    lines = response_content.split('\n')
+                    for line in lines:
+                        if '📚' in line and ('내부 문서' in line or '지식 베이스' in line):
+                            if current_section and current_type:
+                                if current_type == 'kb':
+                                    kb_sections.append('\n'.join(current_section))
+                                else:
+                                    web_sections.append('\n'.join(current_section))
+                            current_section = [line]
+                            current_type = 'kb'
+                        elif '🌐' in line and ('웹 참조' in line or '웹 검색' in line):
+                            if current_section and current_type:
+                                if current_type == 'kb':
+                                    kb_sections.append('\n'.join(current_section))
+                                else:
+                                    web_sections.append('\n'.join(current_section))
+                            current_section = [line]
+                            current_type = 'web'
+                        else:
+                            current_section.append(line)
+                    
+                    # 마지막 섹션 처리
+                    if current_section and current_type:
+                        if current_type == 'kb':
+                            kb_sections.append('\n'.join(current_section))
+                        else:
+                            web_sections.append('\n'.join(current_section))
+                    
+                    # 지식기반 답변 우선 표시
+                    if kb_sections:
+                        st.markdown("### 📚 지식 베이스 기반 답변")
+                        for kb_section in kb_sections:
+                            st.markdown(kb_section)
+                    
+                    # 웹기반 답변 표시
+                    if web_sections:
+                        st.markdown("### 🌐 웹 검색 보조 정보")
+                        for web_section in web_sections:
+                            st.markdown(web_section)
+                    
+                    # 구분이 없는 경우 전체 답변 표시
+                    if not kb_sections and not web_sections:
+                        st.markdown(f"**답변:** {response_content}")
+                    
                     st.markdown(f"**시간:** {message['timestamp']}")
     else:
         st.info("아직 검색한 내용이 없습니다. 위에서 질문을 입력해보세요!")

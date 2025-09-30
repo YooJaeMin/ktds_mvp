@@ -68,12 +68,6 @@ def show_new_rfp_analysis():
                 default=["기능 요구사항", "비기능 요구사항"],
                 help="중점적으로 분석할 영역을 선택하세요."
             )
-            
-            output_format = st.selectbox(
-                "출력 형식",
-                ["요약 보고서", "상세 보고서", "JSON 데이터"],
-                help="분석 결과의 출력 형식을 선택하세요."
-            )
         
         # 분석 실행
         if st.button("분석 시작", type="primary"):
@@ -82,7 +76,7 @@ def show_new_rfp_analysis():
                 return
             
             with st.spinner("RFP 문서를 분석하고 있습니다..."):
-                analyze_rfp_document(uploaded_file, industry, analysis_depth, focus_area, output_format)
+                analyze_rfp_document(uploaded_file, industry, analysis_depth, focus_area)
             
             st.success("RFP 분석이 완료되었습니다!")
 
@@ -175,12 +169,6 @@ def show_stored_rfp_analysis():
                         default=["기능 요구사항", "비기능 요구사항"],
                         help="중점 분석 영역을 변경할 수 있습니다."
                     )
-                    
-                    new_format = st.selectbox(
-                        "출력 형식 (변경 가능)",
-                        ["요약 보고서", "상세 보고서", "JSON 데이터"],
-                        help="출력 형식을 변경할 수 있습니다."
-                    )
                 
                 if st.button("재분석 시작", type="primary"):
                     if not new_focus:
@@ -188,7 +176,7 @@ def show_stored_rfp_analysis():
                         return
                     
                     with st.spinner("저장된 RFP를 재분석하고 있습니다..."):
-                        reanalyze_stored_rfp(selected_directory['name'], new_industry, new_depth, new_focus, new_format)
+                        reanalyze_stored_rfp(selected_directory['name'], new_industry, new_depth, new_focus)
                     
                     st.success("RFP 재분석이 완료되었습니다!")
             else:
@@ -197,7 +185,7 @@ def show_stored_rfp_analysis():
     except Exception as e:
         st.error(f"오류가 발생했습니다: {str(e)}")
 
-def analyze_rfp_document(uploaded_file, industry, analysis_depth, focus_area, output_format):
+def analyze_rfp_document(uploaded_file, industry, analysis_depth, focus_area):
     """RFP 문서 분석 실행"""
     try:
         # 새로운 분석 시작 시 세션 상태 초기화
@@ -236,12 +224,12 @@ def analyze_rfp_document(uploaded_file, industry, analysis_depth, focus_area, ou
         
         # 2단계: 분석 결과 생성 (같은 디렉토리에 저장)
         st.info("🔍 텍스트를 분석하고 있습니다...")
-        generate_analysis_results(content, industry, analysis_depth, focus_area, output_format, uploaded_file.name)
+        generate_analysis_results(content, industry, analysis_depth, focus_area, uploaded_file.name)
         
     except Exception as e:
         st.error(f"분석 중 오류가 발생했습니다: {str(e)}")
 
-def reanalyze_stored_rfp(directory_name, industry, analysis_depth, focus_area, output_format):
+def reanalyze_stored_rfp(directory_name, industry, analysis_depth, focus_area):
     """저장된 RFP 재분석"""
     try:
         # 재분석 시작 시 세션 상태 초기화
@@ -307,7 +295,7 @@ def reanalyze_stored_rfp(directory_name, industry, analysis_depth, focus_area, o
                 st.session_state.current_container = container_name
                 
                 # 분석 결과 생성 및 표시 (자동 저장 비활성화)
-                generate_analysis_results(content, industry, analysis_depth, focus_area, output_format, main_rfp_file, auto_save=False)
+                generate_analysis_results(content, industry, analysis_depth, focus_area, main_rfp_file, auto_save=False)
                 
                 # 재분석 결과를 새 디렉토리에 저장
                 save_reanalysis_results(container_name, new_directory_name, content, industry, analysis_depth, focus_area)
@@ -357,17 +345,15 @@ def save_reanalysis_docx_files(container_name, directory_name, content, industry
         # 병렬 처리로 분석 결과 생성
         import concurrent.futures
         
-        with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             # 모든 분석을 병렬로 실행
-            future_requirements = executor.submit(extract_requirements_with_azure, azure_services, content, industry, focus_area)
-            future_keywords = executor.submit(analyze_keywords_with_azure, azure_services, content, industry)
-            future_structure = executor.submit(analyze_structure_with_azure, azure_services, content, industry)
+            future_requirements = executor.submit(extract_requirements_with_azure, azure_services, content, industry, analysis_depth, focus_area)
+            future_keywords = executor.submit(analyze_keywords_with_azure, azure_services, content, industry, analysis_depth)
             future_summary = executor.submit(generate_summary_report_with_azure, azure_services, content, industry, analysis_depth, focus_area)
             
             # 결과 수집
             requirements = future_requirements.result()
             keywords = future_keywords.result()
-            structure = future_structure.result()
             summary = future_summary.result()
         
         # 통합 분석 결과 생성
@@ -380,10 +366,7 @@ def save_reanalysis_docx_files(container_name, directory_name, content, industry
 ## 2. 키워드 분석
 {keywords}
 
-## 3. 구조 분석
-{structure}
-
-## 4. 요약 보고서
+## 3. 요약 보고서
 {summary}
         """
         
@@ -432,7 +415,7 @@ def save_reanalysis_docx_files(container_name, directory_name, content, industry
     except Exception as e:
         st.error(f"재분석 DOCX 파일 저장 중 오류: {str(e)}")
 
-def generate_analysis_results(content, industry, analysis_depth, focus_area, output_format, file_name, auto_save=True):
+def generate_analysis_results(content, industry, analysis_depth, focus_area, file_name, auto_save=True):
     """분석 결과 생성 및 표시"""
     try:
         azure_services = st.session_state.azure_services
@@ -445,11 +428,10 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
             st.info("💡 **분석이 완료되면 아래 탭에서 결과를 확인하고, 페이지 하단의 다운로드 버튼을 통해 결과를 저장할 수 있습니다.**")
         
         # 탭으로 결과 표시
-        tab1, tab2, tab3, tab4 = st.tabs([
-            "요구사항 추출", 
-            "키워드 분석", 
-            "구조 분석",
-            "요약 보고서"
+        tab1, tab2, tab3 = st.tabs([
+            "📋 요구사항 추출", 
+            "🔍 키워드 분석",
+            "📄 요약 보고서"
         ])
         
         # 병렬 처리를 위한 placeholder 생성
@@ -462,10 +444,6 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
             keyword_placeholder.info("🔄 키워드 분석 중...")
         
         with tab3:
-            structure_placeholder = st.empty()
-            structure_placeholder.info("🔄 구조 분석 중...")
-        
-        with tab4:
             summary_placeholder = st.empty()
             summary_placeholder.info("🔄 요약 보고서 생성 중...")
         
@@ -479,19 +457,13 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
             {
                 'name': 'requirements',
                 'func': extract_requirements_with_azure,
-                'args': (azure_services, content, industry, focus_area),
+                'args': (azure_services, content, industry, analysis_depth, focus_area),
                 'kwargs': {}
             },
             {
                 'name': 'keywords', 
                 'func': analyze_keywords_with_azure,
-                'args': (azure_services, content, industry),
-                'kwargs': {}
-            },
-            {
-                'name': 'structure',
-                'func': analyze_structure_with_azure, 
-                'args': (azure_services, content, industry),
+                'args': (azure_services, content, industry, analysis_depth),
                 'kwargs': {}
             },
             {
@@ -504,26 +476,42 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
         
         def run_analysis_with_azure(azure_services, content, industry, focus_area, analysis_depth):
             """최적화된 Azure 서비스 분석 실행"""
-            results = parallel_analysis_executor(analyses, max_workers=4)
+            results = parallel_analysis_executor(analyses, max_workers=3)
             
             # 결과를 순차적으로 표시 (완료되는 대로)
             # 요구사항 추출 결과 표시
             requirements = results['requirements']
-            req_placeholder.markdown(requirements)
+            req_placeholder.markdown(
+                f"""
+                <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                    {requirements}
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
             
             # 키워드 분석 결과 표시
             keywords = results['keywords']
-            keyword_placeholder.markdown(keywords)
+            keyword_placeholder.markdown(
+                f"""
+                <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                    {keywords}
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
             create_keyword_cloud()
-            
-            # 구조 분석 결과 표시
-            structure = results['structure']
-            structure_placeholder.markdown(structure)
-            create_structure_diagram()
             
             # 요약 보고서 결과 표시
             summary = results['summary']
-            summary_placeholder.markdown(summary)
+            summary_placeholder.markdown(
+                f"""
+                <div style="max-height: 600px; overflow-y: auto; padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px; background-color: #fafafa;">
+                    {summary}
+                </div>
+                """, 
+                unsafe_allow_html=True
+            )
             
             return results
         
@@ -531,12 +519,11 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
         results = run_analysis_with_azure(azure_services, content, industry, focus_area, analysis_depth)
         requirements = results['requirements']
         keywords = results['keywords']
-        structure = results['structure']
         summary = results['summary']
         
         # 분석 결과를 디렉토리에 자동 저장 (auto_save가 True일 때만)
         if auto_save:
-            save_analysis_results_to_directory(content, industry, analysis_depth, focus_area, requirements, keywords, structure, summary)
+            save_analysis_results_to_directory(content, industry, analysis_depth, focus_area, requirements, keywords, summary)
         
         # 모든 분석 결과를 하나로 통합
         combined_content = f"""
@@ -547,9 +534,6 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
 
 ## 2. 키워드 분석 결과
 {keywords}
-
-## 3. 구조 분석 결과
-{structure}
         """
         
         # 파일명 생성
@@ -559,7 +543,6 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
         # 세션 상태에 결과 저장
         st.session_state.requirements = requirements
         st.session_state.keywords = keywords
-        st.session_state.structure = structure
         st.session_state.summary = summary
         st.session_state.detailed_filename = detailed_filename
         st.session_state.summary_filename = summary_filename
@@ -596,149 +579,151 @@ def generate_analysis_results(content, industry, analysis_depth, focus_area, out
     except Exception as e:
         st.error(f"분석 결과 생성 중 오류: {str(e)}")
 
-def extract_requirements(content, industry, focus_area):
+def extract_requirements(content, industry, analysis_depth, focus_area):
     """요구사항 추출"""
     azure_services = st.session_state.azure_services
-    return extract_requirements_with_azure(azure_services, content, industry, focus_area)
+    return extract_requirements_with_azure(azure_services, content, industry, analysis_depth, focus_area)
 
-def extract_requirements_with_azure(azure_services, content, industry, focus_area):
+def extract_requirements_with_azure(azure_services, content, industry, analysis_depth, focus_area):
     """Azure 서비스를 전달받아 요구사항 추출"""
+    
+    # 분석 깊이에 따른 지시사항
+    depth_instructions = {
+        "기본": "주요 요구사항 총 3개만 간략하게 추출하세요. 각 항목당 1-2줄로 요약합니다.",
+        "상세": "모든 요구사항별로 5개를 상세하게 추출하세요. 각 요구사항의 배경과 목적을 포함합니다.",
+        "심화": "모든 요구사항별로 10개를 매우 상세하게 추출하고, 잠재적 이슈, 구현 고려사항, 관련 요구사항과의 연관성까지 분석하세요."
+    }
     
     messages = [
         {
             "role": "system",
-            "content": f"당신은 {industry} 업종의 RFP 분석 전문가입니다. RFP 문서에서 요구사항을 체계적으로 추출해주세요."
+            "content": f"당신은 {industry} 업종의 RFP 분석 전문가입니다. RFP 문서에서 요구사항을 체계적으로 추출해주세요. 분석 깊이: {analysis_depth}"
         },
         {
             "role": "user",
             "content": f"""
             업종: {industry}
+            분석 깊이: {analysis_depth}
             중점 분석 영역: {', '.join(focus_area)}
             
-            RFP 문서 내용:
-            {content[:3000]}...
+            ** 분석 지침: {depth_instructions.get(analysis_depth, depth_instructions['기본'])} **
             
-            다음 형식으로 요구사항을 추출해주세요:
+            RFP 문서 내용:
+            {content}
+            
+            다음 형식으로 요구사항을 추출하고, **구체적인 평가 점수와 기준**을 명시해주세요:
             
             ## 요구사항 추출 결과
             
             ### 1. 기능적 요구사항
             - [요구사항 1]: [상세 설명]
-            - [요구사항 2]: [상세 설명]
-            - 우선순위: [High/Medium/Low]
+              - 우선순위: [High/Medium/Low] (점수: [N/10점])
+              - 구현 난이도: [상/중/하] (예상 공수: [N 인일])
+              - 비즈니스 가치: [N/10점]
+            {"  - 구현 고려사항: [상세 설명]" if analysis_depth == "심화" else ""}
             
             ### 2. 비기능적 요구사항
             - [요구사항 1]: [상세 설명]
-            - [요구사항 2]: [상세 설명]
-            - 중요도: [Critical/Important/Nice-to-have]
+              - 중요도: [Critical/Important/Nice-to-have] (점수: [N/10점])
+              - 기술적 난이도: [상/중/하]
+              - 성능 목표: [구체적 수치, 예: 응답시간 < 2초]
+            {"  - 기술적 제약사항: [상세 설명]" if analysis_depth == "심화" else ""}
             
             ### 3. 기술적 요구사항
             - [요구사항 1]: [상세 설명]
-            - [요구사항 2]: [상세 설명]
-            - 복잡도: [High/Medium/Low]
+              - 복잡도: [High/Medium/Low] (점수: [N/10점])
+              - 기술 성숙도: [검증됨/보통/신기술]
+              - 예상 리스크: [N/10점]
+            {"  - 기술 스택 권장사항: [상세 설명]" if analysis_depth in ["상세", "심화"] else ""}
             
             ### 4. 비즈니스 요구사항
             - [요구사항 1]: [상세 설명]
-            - [요구사항 2]: [상세 설명]
-            - 비즈니스 임팩트: [High/Medium/Low]
+              - 비즈니스 임팩트: [High/Medium/Low] (점수: [N/10점])
+              - 긴급도: [즉시/단기/중장기]
+              - 투자 대비 효과: [N/10점]
+            {"  - ROI 분석: [상세 설명]" if analysis_depth == "심화" else ""}
+            
+            **평가 기준:**
+            - 10점: 프로젝트 필수 요소, 최우선 처리
+            - 8-9점: 핵심 요구사항, 높은 우선순위
+            - 6-7점: 중요 요구사항, 중간 우선순위
+            - 4-5점: 일반 요구사항, 필요시 조정 가능
+            - 1-3점: 선택적 요구사항, 추가 기능
             """
         }
     ]
     
     return azure_services.call_openai(messages)
 
-def analyze_keywords(content, industry):
+def analyze_keywords(content, industry, analysis_depth):
     """키워드 분석"""
     azure_services = st.session_state.azure_services
-    return analyze_keywords_with_azure(azure_services, content, industry)
+    return analyze_keywords_with_azure(azure_services, content, industry, analysis_depth)
 
-def analyze_keywords_with_azure(azure_services, content, industry):
+def analyze_keywords_with_azure(azure_services, content, industry, analysis_depth):
     """Azure 서비스를 전달받아 키워드 분석"""
+    
+    # 분석 깊이에 따른 키워드 분석 범위
+    depth_instructions = {
+        "기본": "상위 5개 주요 키워드만 각 카테고리별로 추출하세요.",
+        "상세": "상위 10개 키워드를 추출하고, 각 키워드의 문맥과 의미를 분석하세요.",
+        "심화": "상위 15개 키워드를 추출하고, 키워드 간 연관성, 트렌드 분석, 산업별 특이사항까지 상세히 분석하세요."
+    }
     
     messages = [
         {
             "role": "system",
-            "content": f"당신은 {industry} 업종의 텍스트 분석 전문가입니다. RFP 문서의 키워드를 분석해주세요."
+            "content": f"당신은 {industry} 업종의 텍스트 분석 전문가입니다. RFP 문서의 키워드를 분석해주세요. 분석 깊이: {analysis_depth}"
         },
         {
             "role": "user",
             "content": f"""
             업종: {industry}
-            RFP 문서 내용:
-            {content[:2000]}...
+            분석 깊이: {analysis_depth}
             
-            다음 관점에서 키워드 분석을 해주세요:
+            ** 분석 지침: {depth_instructions.get(analysis_depth, depth_instructions['기본'])} **
+            
+            RFP 문서 내용:
+            {content}
+            
+            다음 관점에서 키워드를 분석하고, 반드시 **구체적인 수치**를 포함해주세요:
             
             ## 키워드 분석 결과
             
             ### 1. 기술 키워드
-            - [키워드 1]: [빈도, 중요도]
-            - [키워드 2]: [빈도, 중요도]
+            - [키워드 1]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            - [키워드 2]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            {"- 키워드 설명: [기술적 의미 및 적용 사례]" if analysis_depth in ["상세", "심화"] else ""}
             
             ### 2. 비즈니스 키워드
-            - [키워드 1]: [빈도, 중요도]
-            - [키워드 2]: [빈도, 중요도]
+            - [키워드 1]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            - [키워드 2]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            {"- 비즈니스 임팩트: [예상 영향도]" if analysis_depth in ["상세", "심화"] else ""}
             
             ### 3. 업계 특화 키워드
-            - [키워드 1]: [빈도, 중요도]
-            - [키워드 2]: [빈도, 중요도]
+            - [키워드 1]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            - [키워드 2]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            {f"- {industry} 업종 특성: [상세 설명]" if analysis_depth in ["상세", "심화"] else ""}
             
             ### 4. 트렌드 키워드
-            - [키워드 1]: [빈도, 중요도]
-            - [키워드 2]: [빈도, 중요도]
+            - [키워드 1]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            - [키워드 2]: 출현 빈도 [N회], 중요도 [N/10점], 문서 내 비중 [N%]
+            {"- 최신 트렌드 분석: [산업 동향과의 연관성]" if analysis_depth == "심화" else ""}
+            
+            **중요도 평가 기준:**
+            - 10점: 프로젝트 성공의 핵심 요소
+            - 8-9점: 매우 중요한 요구사항
+            - 6-7점: 중요한 고려사항
+            - 4-5점: 보통 수준의 중요도
+            - 1-3점: 참고 수준
+            
+            {"### 5. 키워드 연관성 분석\n- 주요 키워드 간 관계 맵\n- 키워드 클러스터링 결과" if analysis_depth == "심화" else ""}
             """
         }
     ]
     
     return azure_services.call_openai(messages)
 
-def analyze_structure(content, industry):
-    """구조 분석"""
-    azure_services = st.session_state.azure_services
-    return analyze_structure_with_azure(azure_services, content, industry)
-
-def analyze_structure_with_azure(azure_services, content, industry):
-    """Azure 서비스를 전달받아 구조 분석"""
-    
-    messages = [
-        {
-            "role": "system",
-            "content": f"당신은 {industry} 업종의 문서 구조 분석 전문가입니다. RFP 문서의 구조를 분석해주세요."
-        },
-        {
-            "role": "user",
-            "content": f"""
-            업종: {industry}
-            RFP 문서 내용:
-            {content[:2000]}...
-            
-            다음 관점에서 구조 분석을 해주세요:
-            
-            ## 구조 분석 결과
-            
-            ### 1. 문서 구조
-            - [섹션 1]: [내용 요약, 길이]
-            - [섹션 2]: [내용 요약, 길이]
-            
-            ### 2. 정보 밀도
-            - 핵심 정보 비율: [%]
-            - 상세 설명 비율: [%]
-            - 예시/사례 비율: [%]
-            
-            ### 3. 가독성 분석
-            - 평균 문장 길이: [단어 수]
-            - 복잡한 문장 비율: [%]
-            - 기술 용어 사용 빈도: [%]
-            
-            ### 4. 완성도 평가
-            - 필수 정보 완성도: [%]
-            - 상세도 수준: [High/Medium/Low]
-            - 일관성 수준: [High/Medium/Low]
-            """
-        }
-    ]
-    
-    return azure_services.call_openai(messages)
 
 def generate_summary_report(content, industry, analysis_depth, focus_area):
     """요약 보고서 생성"""
@@ -761,7 +746,7 @@ def generate_summary_report_with_azure(azure_services, content, industry, analys
             중점 영역: {', '.join(focus_area)}
             
             RFP 문서 내용:
-            {content[:2000]}...
+            {content}
             
             다음 구조로 종합 보고서를 작성해주세요:
             
@@ -810,24 +795,6 @@ def create_keyword_cloud():
     
     df = pd.DataFrame(keywords_data)
     st.dataframe(df, use_container_width=True)
-
-def create_structure_diagram():
-    """구조 다이어그램 생성 (샘플)"""
-    st.subheader("📋 문서 구조 분석")
-    
-    # 샘플 구조 데이터
-    structure_data = {
-        "섹션": ["프로젝트 개요", "요구사항", "기술 스펙", "제안 조건", "평가 기준"],
-        "길이(%)": [15, 35, 25, 15, 10],
-        "정보 밀도": ["Low", "High", "High", "Medium", "Medium"]
-    }
-    
-    df = pd.DataFrame(structure_data)
-    st.dataframe(df, use_container_width=True)
-    
-    # 간단한 차트
-    st.bar_chart(df.set_index("섹션")["길이(%)"])
-
 
 def save_to_azure_storage(file_name, file_content, analysis_depth, focus_area, extracted_text=None):
     """Azure Storage에 저장"""
@@ -1011,7 +978,7 @@ def generate_korean_project_name(project_summary):
     except Exception as e:
         return f"프로젝트명 생성 중 오류: {str(e)}"
 
-def save_analysis_results_to_directory(content, industry, analysis_depth, focus_area, requirements, keywords, structure, summary):
+def save_analysis_results_to_directory(content, industry, analysis_depth, focus_area, requirements, keywords, summary):
     """분석 결과를 디렉토리에 자동 저장"""
     try:
         azure_services = st.session_state.azure_services
@@ -1043,9 +1010,6 @@ def save_analysis_results_to_directory(content, industry, analysis_depth, focus_
 
 ## 2. 키워드 분석 결과
 {keywords}
-
-## 3. 구조 분석 결과
-{structure}
         """
         
         # Word 문서 생성 및 저장
