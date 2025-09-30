@@ -287,7 +287,7 @@ def show_chatbot_panel():
     st.markdown("### 📖 추가 정보")
     st.markdown("""
     - **지식 베이스**: Azure AI Search를 통한 내부 문서 검색
-    - **웹 검색**: Bing Search API를 통한 최신 정보 검색
+    - **웹 검색**: OpenAI를 통한 최신 정보 검색
     - **AI 분석**: Azure OpenAI를 통한 종합적인 답변 생성
     - **🧠 AI 쿼리 개선**: 질문 의도를 분석하여 더 효과적인 검색 쿼리로 자동 변환
     """)

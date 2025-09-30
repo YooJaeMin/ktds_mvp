@@ -51,7 +51,7 @@
 #### 코드 품질 개선
 - **requirements.txt 재구성**
   - 카테고리별 분류 (Web Framework, Azure Services, AI/ML, etc.)
-  - `requests` 라이브러리 추가 (Bing Search용)
+  - `requests` 라이브러리 추가
   - 주석으로 용도 명시
 
 - **함수 리팩토링**
@@ -163,3 +163,4 @@
 **참고:** 
 - 버전 번호는 [Semantic Versioning](https://semver.org/) 규칙을 따릅니다.
 - 날짜 형식: YYYY-MM-DD
+

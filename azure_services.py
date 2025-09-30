@@ -2,7 +2,6 @@
 Azure 서비스 연동 모듈
 """
 import os
-import requests
 from azure.storage.blob import BlobServiceClient, ContainerClient
 from azure.search.documents import SearchClient
 from azure.search.documents.indexes import SearchIndexClient
@@ -505,47 +504,11 @@ OPENAI_API_TYPE=azure
             return []
     
     def search_web(self, query, max_results=3):
-        """웹 검색 기능 (Bing Search API 사용)"""
-        try:
-            # Bing Search API 키가 설정되어 있는지 확인
-            bing_api_key = os.getenv('BING_SEARCH_API_KEY')
-            if not bing_api_key:
-                # Bing API 키가 없으면 Azure OpenAI의 웹 검색 기능 사용
-                return self._search_web_with_openai(query)
-            
-            # Bing Search API 사용
-            endpoint = "https://api.bing.microsoft.com/v7.0/search"
-            headers = {"Ocp-Apim-Subscription-Key": bing_api_key}
-            params = {
-                "q": query,
-                "count": max_results,
-                "offset": 0,
-                "mkt": "ko-KR",
-                "safesearch": "Moderate"
-            }
-            
-            response = requests.get(endpoint, headers=headers, params=params)
-            response.raise_for_status()
-            
-            search_results = []
-            data = response.json()
-            
-            for item in data.get('webPages', {}).get('value', []):
-                search_results.append({
-                    'title': item.get('name', ''),
-                    'snippet': item.get('snippet', ''),
-                    'url': item.get('url', ''),
-                    'display_url': item.get('displayUrl', '')
-                })
-            
-            return search_results
-            
-        except Exception as e:
-            print(f"웹 검색 오류: {str(e)}")
-            return self._search_web_with_openai(query)
+        """OpenAI를 통한 웹 검색 기능"""
+        return self._search_web_with_openai(query)
     
     def _search_web_with_openai(self, query):
-        """OpenAI를 통한 웹 검색 시뮬레이션"""
+        """OpenAI를 통한 웹 검색"""
         try:
             # OpenAI를 사용하여 웹 검색 결과를 시뮬레이션
             messages = [

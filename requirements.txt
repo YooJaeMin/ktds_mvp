@@ -21,6 +21,6 @@ numpy==1.24.3
 # Configuration
 python-dotenv==1.0.0
 
-# HTTP Requests (for Bing Search)
+# HTTP Requests
 requests==2.31.0
 
