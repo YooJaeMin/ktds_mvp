@@ -1,8 +1,9 @@
 # 🚀 RFP 분석 및 제안서 지원 플랫폼
 
 > Azure Open AI GPT-4.1를 활용한 스마트 RFP 분석 솔루션
-테스트용 url : https://rfp-analysis-jm3-gfh0d2ath5dde5be.koreacentral-01.azurewebsites.net/
+
 ---
+✅ 테스트용 url : https://rfp-analysis-jm3-gfh0d2ath5dde5be.koreacentral-01.azurewebsites.net/
 
 ## 📋 목차
 - [프로젝트 개요](#-프로젝트-개요)
